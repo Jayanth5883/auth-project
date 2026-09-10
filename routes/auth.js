@@ -13,6 +13,9 @@ import pool from "../db.js";
 // Import authentication middleware
 import authenticateJWT from "../middleware/authMiddleware.js";
 
+//Importing the middleware authorize role
+import authorizeRole from "../middleware/authorizeRole.js";
+
 
 // Create router
 const router = express.Router();
@@ -160,7 +163,8 @@ router.post("/login", async (req, res) => {
         const accessToken = jwt.sign(
             {
                 id: user.id,
-                email: user.email
+                email: user.email,
+                role: user.role
             },
 
             process.env.ACCESS_TOKEN_SECRET,
@@ -361,6 +365,19 @@ router.post("/logout", (req, res) => {
     });
 });
 
+router.get(
+    "/admin",
+    authenticateJWT,
+    authorizeRole("admin"),
+    (req, res) => {
+
+        res.json({
+            message: "Welcome Admin",
+            user: req.user
+        });
+
+    }
+);
 
 // Export router
 export default router;
