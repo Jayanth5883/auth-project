@@ -1,3 +1,6 @@
+// 11. Advanced REST APIs: This version supports pagination and role filtering.
+// 12. API versioning: The route is mounted under /api/v1/users so its contract can evolve separately.
+
 import express from "express";
 import pool from "../../db.js";
 import authenticateJWT from "../../middleware/authMiddleware.js";
@@ -12,11 +15,13 @@ router.get(
     async (req, res) => {
 
         try {
+            // 11. Pagination: page and limit select a bounded slice of users.
             // Get pagination values from URL
             // Example: ?page=2&limit=5
             const page = Number(req.query.page) || 1;
             const limit = Number(req.query.limit) || 10;
 
+            // 11. Filtering: the optional role query parameter narrows the results.
             // Get filtering value from URL
             // Example: ?role=admin
             const { role } = req.query;
@@ -61,13 +66,17 @@ router.get(
 
         } catch (error) {
 
-            // Show error in terminal
-            console.error(error);
+            // 14. Error handling: Forward unexpected database errors to the central handler.
+            // Send the error to the central error handler
+            next(error);
 
-            // Send error response
-            res.status(500).json({
-                message: "Server error"
-            });
+            // // Show error in terminal
+            // console.error(error);
+
+            // // Send error response
+            // res.status(500).json({
+            //     message: "Server error"
+            // });
         }
     }
 );

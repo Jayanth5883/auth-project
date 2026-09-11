@@ -1,3 +1,13 @@
+// 4. REST API: This router implements authentication resources with HTTP endpoints:
+// register, login, profile, refresh, logout, and admin.
+// 5. Bcrypt: Passwords are hashed during registration and compared during login.
+// 6. JWT: jsonwebtoken creates and verifies signed authentication tokens.
+// 7. Access + refresh tokens: Access tokens are short-lived; refresh tokens are
+// longer-lived and are used to obtain new access tokens.
+// 8. Cookies: The refresh token is stored in an HTTP-only cookie.
+// 10. Authorization + RBAC: The admin endpoint combines authentication with
+// role-based access control.
+
 // Import Express
 import express from "express";
 
@@ -28,64 +38,68 @@ const router = express.Router();
 // POST /auth/register
 //
 // Used to create a new user.
+// 13. Security validation: Validate required fields, normalize the email,
+// check its format, and enforce the minimum password length before database use.
 // ==================================================
 
 router.post("/register", async (req, res) => {
-
     try {
-
-        // Get email and password from request body
         const { email, password } = req.body;
 
-
-        // Check whether email and password were provided
+        // Check that both fields were provided
         if (!email || !password) {
             return res.status(400).json({
                 message: "Email and password are required"
             });
         }
 
+        // Remove unnecessary spaces from the email
+        const cleanEmail = email.trim().toLowerCase();
 
-        // Check whether user already exists
+        // Basic email validation
+        if (!cleanEmail.includes("@")) {
+            return res.status(400).json({
+                message: "Invalid email format"
+            });
+        }
+
+        // Require a minimum password length
+        if (password.length < 8) {
+            return res.status(400).json({
+                message: "Password must be at least 8 characters"
+            });
+        }
+
+        // Check whether the email already exists
         const existingUser = await pool.query(
             "SELECT id FROM users WHERE email = $1",
-            [email]
+            [cleanEmail]
         );
 
-
-        // If a user already exists
         if (existingUser.rows.length > 0) {
             return res.status(409).json({
                 message: "User already exists"
             });
         }
 
-
-        // Hash the password
-        //
-        // bcrypt does NOT store the original password.
-        // It creates a one-way hash.
+        // 5. Bcrypt: Hash the password before storing it; the plain password is not saved.
         const hashedPassword = await bcrypt.hash(password, 10);
 
-
-        // Insert user into PostgreSQL
+        // Store the validated email and hashed password
         const result = await pool.query(
             `INSERT INTO users (email, password)
              VALUES ($1, $2)
              RETURNING id, email, created_at`,
-            [email, hashedPassword]
+            [cleanEmail, hashedPassword]
         );
 
-
-        // Send successful response
         res.status(201).json({
             message: "User registered successfully",
             user: result.rows[0]
         });
 
-
     } catch (error) {
-
+        // 14. Error handling: Log the server-side error while returning a safe response.
         console.error(error);
 
         res.status(500).json({
@@ -114,6 +128,7 @@ router.post("/login", async (req, res) => {
         const { email, password } = req.body;
 
 
+        // 13. Security validation: Reject incomplete login input before querying the database.
         // Check input
         if (!email || !password) {
             return res.status(400).json({
@@ -156,6 +171,7 @@ router.post("/login", async (req, res) => {
         }
 
 
+        // 7. Access token: A short-lived JWT is returned to the client for API access.
         // --------------------------------------------------
         // CREATE ACCESS TOKEN
         // --------------------------------------------------
@@ -175,6 +191,7 @@ router.post("/login", async (req, res) => {
         );
 
 
+        // 7. Refresh token: A longer-lived JWT allows the client to request a new access token.
         // --------------------------------------------------
         // CREATE REFRESH TOKEN
         // --------------------------------------------------
@@ -192,6 +209,7 @@ router.post("/login", async (req, res) => {
         );
 
 
+        // 8. Cookies: Store the refresh token in an HTTP-only cookie so JavaScript cannot read it.
         // --------------------------------------------------
         // STORE REFRESH TOKEN IN COOKIE
         // --------------------------------------------------
@@ -219,6 +237,7 @@ router.post("/login", async (req, res) => {
 
 
     } catch (error) {
+        // 14. Error handling: Do not expose authentication or database internals to the client.
 
         console.error(error);
 
@@ -274,6 +293,7 @@ router.get(
 
 
         } catch (error) {
+            // 14. Error handling: Return a safe response when the protected profile lookup fails.
 
             console.error(error);
 
@@ -296,6 +316,7 @@ router.get(
 
 router.post("/refresh", (req, res) => {
 
+    // 7. Refresh-token flow: Read and verify the refresh token before issuing a new access token.
     // Get refresh token from cookie
     const refreshToken = req.cookies.refreshToken;
 
@@ -367,6 +388,7 @@ router.post("/logout", (req, res) => {
 
 router.get(
     "/admin",
+    // 10. Authorization + RBAC: Authentication runs first, then only an admin may continue.
     authenticateJWT,
     authorizeRole("admin"),
     (req, res) => {

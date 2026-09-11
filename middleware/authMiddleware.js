@@ -2,6 +2,9 @@
 import jwt from "jsonwebtoken";
 
 
+// 9. Middleware: This function runs before protected route handlers.
+// 6. JWT: It verifies the JSON Web Token with the access-token secret.
+// 10. Authentication: A valid access token identifies the signed-in user.
 // Middleware used to protect routes
 const authenticateJWT = (req, res, next) => {
 
@@ -44,6 +47,7 @@ const authenticateJWT = (req, res, next) => {
 
     try {
 
+        // 16. Secrets management: The JWT signing secret is supplied by the environment.
         // Verify the token using our secret
         const decoded = jwt.verify(
             token,
