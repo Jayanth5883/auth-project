@@ -10,6 +10,10 @@ import cookieParser from "cookie-parser";
 // Import authentication routes
 import authRoutes from "./routes/auth.js";
 
+import userRoutesV1 from "./routes/v1/users.js"
+
+import userRoutesV2 from "./routes/v2/users.js";
+
 // Load environment variables
 dotenv.config();
 
@@ -49,6 +53,13 @@ app.use(cookieParser());
 // GET  /auth/profile
 app.use("/auth", authRoutes);
 
+
+//API version 1
+app.use("/api/v1/users", userRoutesV1);
+
+
+// API Version 2
+app.use("/api/v2/users", userRoutesV2);
 
 // --------------------------------------------------
 // TEST ROUTE
