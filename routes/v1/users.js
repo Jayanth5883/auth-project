@@ -19,7 +19,7 @@ router.get(
             // Get pagination values from URL
             // Example: ?page=2&limit=5
             const page = Number(req.query.page) || 1;
-            const limit = Number(req.query.limit) || 10;
+            const limit = Number(req.query.limit) || 14;
 
             // 11. Filtering: the optional role query parameter narrows the results.
             // Get filtering value from URL

@@ -1,0 +1,17 @@
+# Do not copy installed Node.js packages.
+# Docker will install them using npm ci.
+node_modules
+
+# Do not copy Git information into the Docker image.
+.git
+.gitignore
+
+# Do not copy environment files into the Docker image.
+# We will provide environment variables separately.
+.env
+
+# Do not copy logs.
+*.log
+
+# Do not copy VS Code configuration.
+.vscode

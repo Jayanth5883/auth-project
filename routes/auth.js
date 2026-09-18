@@ -26,6 +26,10 @@ import authenticateJWT from "../middleware/authMiddleware.js";
 //Importing the middleware authorize role
 import authorizeRole from "../middleware/authorizeRole.js";
 
+// Import the email queue so we can add
+// a background job after user registration.
+import emailQueue from "../queues/emailQueue.js";
+
 
 // Create router
 const router = express.Router();
@@ -62,7 +66,7 @@ router.post("/register", async (req, res) => {
                 message: "Invalid email format"
             });
         }
-
+0
         // Require a minimum password length
         if (password.length < 8) {
             return res.status(400).json({
@@ -92,6 +96,11 @@ router.post("/register", async (req, res) => {
              RETURNING id, email, created_at`,
             [cleanEmail, hashedPassword]
         );
+        // Add a background job to the email queue.
+        // Redis will store this job until the worker processes it.
+        await emailQueue.add("welcomeEmail", {
+            email: email,
+        });
 
         res.status(201).json({
             message: "User registered successfully",
