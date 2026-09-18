@@ -7,6 +7,36 @@ import authenticateJWT from "../../middleware/authMiddleware.js";
 
 const router = express.Router();
 
+/**
+ * @swagger
+ * /api/v1/profile/{id}:
+ *   get:
+ *     summary: Get a user's profile
+ *     tags:
+ *       - Profiles
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           example: 1
+ *         description: User ID
+ *     responses:
+ *       200:
+ *         description: User profile
+ *       400:
+ *         description: Invalid user ID
+ *       401:
+ *         description: Missing or invalid access token
+ *       403:
+ *         description: Access denied for this profile
+ *       404:
+ *         description: User not found
+ */
+
 // Get a user's profile
 router.get("/:id", authenticateJWT, async (req, res, next) => {
 

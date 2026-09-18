@@ -8,11 +8,50 @@ import authorizeRole from "../../middleware/authorizeRole.js";
 
 const router = express.Router();
 
+/**
+ * @swagger
+ * /api/v1/users:
+ *   get:
+ *     summary: List users with pagination and optional role filtering
+ *     tags:
+ *       - Users
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 14
+ *         description: Number of users per page
+ *       - in: query
+ *         name: role
+ *         schema:
+ *           type: string
+ *           example: admin
+ *         description: Optional role filter
+ *     responses:
+ *       200:
+ *         description: Paginated user list
+ *       401:
+ *         description: Missing or invalid access token
+ *       403:
+ *         description: Access denied for non-admin users
+ */
+
 router.get(
     "/",
     authenticateJWT,
     authorizeRole("admin"),
-    async (req, res) => {
+    async (req, res, next) => {
 
         try {
             // 11. Pagination: page and limit select a bounded slice of users.

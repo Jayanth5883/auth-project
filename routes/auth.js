@@ -35,6 +35,8 @@ import emailQueue from "../queues/emailQueue.js";
 const router = express.Router();
 
 
+
+
 // ==================================================
 // REGISTER
 // ==================================================
@@ -46,6 +48,37 @@ const router = express.Router();
 // check its format, and enforce the minimum password length before database use.
 // ==================================================
 
+/**
+ * @swagger
+ * /auth/register:
+ *   post:
+ *     summary: Register a new user
+ *     tags:
+ *       - Authentication
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 example: test@gmail.com
+ *               password:
+ *                 type: string
+ *                 example: password123
+ *     responses:
+ *       201:
+ *         description: User registered successfully
+ *       400:
+ *         description: Invalid input
+ *       409:
+ *         description: User already exists
+ */
 router.post("/register", async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -66,7 +99,7 @@ router.post("/register", async (req, res) => {
                 message: "Invalid email format"
             });
         }
-0
+        0
         // Require a minimum password length
         if (password.length < 8) {
             return res.status(400).json({
@@ -129,12 +162,46 @@ router.post("/register", async (req, res) => {
 // 2. Refresh token
 // ==================================================
 
+/**
+ * @swagger
+ * /auth/login:
+ *   post:
+ *     summary: Log in and issue access and refresh tokens
+ *     tags:
+ *       - Authentication
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: test@gmail.com
+ *               password:
+ *                 type: string
+ *                 format: password
+ *                 example: password123
+ *     responses:
+ *       200:
+ *         description: Login successful; refresh token is set in an HTTP-only cookie
+ *       400:
+ *         description: Missing email or password
+ *       401:
+ *         description: Invalid email or password
+ */
 router.post("/login", async (req, res) => {
 
     try {
 
         // Get email and password from request
         const { email, password } = req.body;
+        const cleanEmail = email.trim().toLowerCase();
 
 
         // 13. Security validation: Reject incomplete login input before querying the database.
@@ -149,7 +216,7 @@ router.post("/login", async (req, res) => {
         // Find user by email
         const result = await pool.query(
             "SELECT * FROM users WHERE email = $1",
-            [email]
+            [cleanEmail]
         );
 
 
@@ -267,6 +334,23 @@ router.post("/login", async (req, res) => {
 // User must send a valid access token.
 // ==================================================
 
+/**
+ * @swagger
+ * /auth/profile:
+ *   get:
+ *     summary: Get the authenticated user's profile
+ *     tags:
+ *       - Authentication
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Authenticated user's profile
+ *       401:
+ *         description: Missing or invalid access token
+ *       404:
+ *         description: User not found
+ */
 router.get(
     "/profile",
     authenticateJWT,
@@ -323,6 +407,19 @@ router.get(
 // Creates a new access token using the refresh token.
 // ==================================================
 
+/**
+ * @swagger
+ * /auth/refresh:
+ *   post:
+ *     summary: Issue a new access token from the refresh-token cookie
+ *     tags:
+ *       - Authentication
+ *     responses:
+ *       200:
+ *         description: New access token issued
+ *       401:
+ *         description: Missing, invalid, or expired refresh token
+ */
 router.post("/refresh", (req, res) => {
 
     // 7. Refresh-token flow: Read and verify the refresh token before issuing a new access token.
@@ -385,6 +482,17 @@ router.post("/refresh", (req, res) => {
 // Deletes the refresh-token cookie.
 // ==================================================
 
+/**
+ * @swagger
+ * /auth/logout:
+ *   post:
+ *     summary: Log out and clear the refresh-token cookie
+ *     tags:
+ *       - Authentication
+ *     responses:
+ *       200:
+ *         description: Logout successful
+ */
 router.post("/logout", (req, res) => {
 
     // Delete refresh token cookie
@@ -395,6 +503,23 @@ router.post("/logout", (req, res) => {
     });
 });
 
+/**
+ * @swagger
+ * /auth/admin:
+ *   get:
+ *     summary: Access the admin-only endpoint
+ *     tags:
+ *       - Authentication
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Admin access granted
+ *       401:
+ *         description: Missing or invalid access token
+ *       403:
+ *         description: Access denied for non-admin users
+ */
 router.get(
     "/admin",
     // 10. Authorization + RBAC: Authentication runs first, then only an admin may continue.
